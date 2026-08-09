@@ -23,6 +23,16 @@ const VippyGeo = (() => {
     { timeout: 5000 }
   );
 
+  // Test/demo mode: override "your current location" with a chosen London spot instead of the
+  // device's real GPS — useful when testing from outside London (e.g. the device is actually in
+  // Bangalore) but you want Vippy to behave as if you're at, say, Big Ben.
+  let mockLocation = (VippyStore.getAll().settings || {}).mockLocation || null;
+  function setMockLocation(loc) {
+    mockLocation = loc; // {lat, lon, label} or null to go back to real/default location
+    VippyStore.saveSettings({ mockLocation: loc });
+  }
+  function getMockLocation() { return mockLocation; }
+
   async function _throttle() {
     const wait = MIN_GAP_MS - (Date.now() - lastNominatimCall);
     if (wait > 0) await new Promise(r => setTimeout(r, wait));
@@ -41,7 +51,7 @@ const VippyGeo = (() => {
       countrycodes: 'gb', // this app is London-scoped — never resolve to a same-named place abroad
       'accept-language': 'en-GB',
     });
-    const bias = isInUK(userLocation) ? userLocation : LONDON;
+    const bias = mockLocation || (isInUK(userLocation) ? userLocation : LONDON);
     const d = 0.15; // ~15km box biases results near the traveller without hard-limiting them
     params.set('viewbox', `${bias.lon - d},${bias.lat + d},${bias.lon + d},${bias.lat - d}`);
     params.set('bounded', '0');
@@ -56,6 +66,7 @@ const VippyGeo = (() => {
   }
 
   async function currentLocation() {
+    if (mockLocation) return { ...mockLocation };
     if (isInUK(userLocation)) return { ...userLocation, label: 'your current location' };
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) return resolve({ ...LONDON, label: 'central London' });
@@ -113,5 +124,5 @@ const VippyGeo = (() => {
     return mins <= 1 ? '1 minute' : `${mins} minutes`;
   }
 
-  return { geocode, currentLocation, route, formatDistance, formatDuration };
+  return { geocode, currentLocation, route, formatDistance, formatDuration, setMockLocation, getMockLocation };
 })();

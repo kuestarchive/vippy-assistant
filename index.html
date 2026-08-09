@@ -121,6 +121,20 @@
       <button id="saveHomeBtn" class="secondary-btn">Save home address</button>
     </div>
     <div class="settings-group">
+      <h2>Test location</h2>
+      <label for="mockLocationSelect">Vippy is scoped to London. If your device's real location is
+        somewhere else (e.g. testing from abroad), simulate a London starting point here so "current
+        location" requests behave correctly.</label>
+      <select id="mockLocationSelect">
+        <option value="">Use my real device location</option>
+        <option value="big-ben">Big Ben, Westminster</option>
+        <option value="kings-cross">King's Cross Station</option>
+        <option value="trafalgar-square">Trafalgar Square</option>
+        <option value="british-museum">British Museum, Bloomsbury</option>
+        <option value="london-bridge">London Bridge</option>
+      </select>
+    </div>
+    <div class="settings-group">
       <h2>Voice</h2>
       <label for="speechRateRange">Speech rate</label>
       <input type="range" id="speechRateRange" min="0.5" max="1.5" step="0.1" value="1">
@@ -141,13 +155,13 @@
 <div id="skipToast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="js/storage.js?v=4"></script>
-<script src="js/tts.js?v=4"></script>
-<script src="js/geo.js?v=4"></script>
-<script src="js/nlu.js?v=4"></script>
-<script src="js/volunteers.js?v=4"></script>
-<script src="js/map.js?v=4"></script>
-<script src="js/voice.js?v=4"></script>
-<script src="js/app.js?v=4"></script>
+<script src="js/storage.js?v=5"></script>
+<script src="js/tts.js?v=5"></script>
+<script src="js/geo.js?v=5"></script>
+<script src="js/nlu.js?v=5"></script>
+<script src="js/volunteers.js?v=5"></script>
+<script src="js/map.js?v=5"></script>
+<script src="js/voice.js?v=5"></script>
+<script src="js/app.js?v=5"></script>
 </body>
 </html>

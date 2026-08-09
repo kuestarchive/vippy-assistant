@@ -191,11 +191,45 @@
     toast('Home address saved');
   });
 
+  // ----- Test location (mock GPS for testing outside London) -----
+  const MOCK_LOCATIONS = {
+    'big-ben': { lat: 51.5007042, lon: -0.1245721, label: 'Big Ben, Westminster' },
+    'kings-cross': { lat: 51.5308, lon: -0.1238, label: "King's Cross Station" },
+    'trafalgar-square': { lat: 51.5080, lon: -0.1281, label: 'Trafalgar Square' },
+    'british-museum': { lat: 51.5192384, lon: -0.1270, label: 'British Museum, Bloomsbury' },
+    'london-bridge': { lat: 51.5079, lon: -0.0877, label: 'London Bridge' },
+  };
+  const mockSelect = $('#mockLocationSelect');
+  const savedMock = VippyGeo.getMockLocation();
+  const savedMockKey = savedMock && Object.keys(MOCK_LOCATIONS).find(k => MOCK_LOCATIONS[k].label === savedMock.label);
+  if (savedMockKey) mockSelect.value = savedMockKey;
+  mockSelect.addEventListener('change', (e) => {
+    const loc = MOCK_LOCATIONS[e.target.value] || null;
+    VippyGeo.setMockLocation(loc);
+    toast(loc ? `Simulating your location as ${loc.label}` : 'Using your real device location');
+  });
+
   $('#speechRateRange').value = data0.settings.rate || 1;
   $('#speechRateRange').addEventListener('input', (e) => {
     VippyTTS.setRate(parseFloat(e.target.value));
     VippyStore.saveSettings({ rate: parseFloat(e.target.value) });
   });
+
+  // Vippy's default voice is UK English, female — matching TravelHands' target audience.
+  // Known male British voice names to actively avoid when guessing (few platforms label gender
+  // directly; Chrome's "Google UK English Female/Male" are the exception and are matched first).
+  const UK_MALE_NAMES = /daniel|arthur|george|ralph|rocko \(english \(united kingdom\)\)|reed \(english \(united kingdom\)\)/i;
+  function pickDefaultUKFemaleVoice(voices) {
+    const ukVoices = voices.filter(v => v.lang === 'en-GB');
+    return (
+      ukVoices.find(v => /female/i.test(v.name)) ||
+      ukVoices.find(v => /hazel|kate|serena|martha|fiona/i.test(v.name)) ||
+      ukVoices.find(v => !UK_MALE_NAMES.test(v.name)) ||
+      ukVoices[0] ||
+      voices.find(v => /female/i.test(v.name)) ||
+      voices[0]
+    );
+  }
 
   function populateVoices() {
     const sel = $('#voiceSelect');
@@ -203,7 +237,13 @@
     if (!voices.length) return;
     sel.innerHTML = voices.map(v => `<option value="${v.name}">${v.name} (${v.lang})</option>`).join('');
     const saved = VippyStore.getAll().settings.voiceName;
-    if (saved) sel.value = saved;
+    const savedVoiceExists = saved && voices.some(v => v.name === saved);
+    if (savedVoiceExists) {
+      sel.value = saved;
+    } else {
+      const pick = pickDefaultUKFemaleVoice(voices);
+      if (pick) { sel.value = pick.name; VippyStore.saveSettings({ voiceName: pick.name }); }
+    }
     VippyTTS.setVoice(sel.value);
   }
   window.speechSynthesis && (window.speechSynthesis.onvoiceschanged = populateVoices);
