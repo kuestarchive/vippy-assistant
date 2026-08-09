@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vippy — Your Travel Voice Assistant</title>
+<meta name="description" content="An accessible, voice-first travel assistant for visually impaired travellers. Say 'Hey Vippy' to book a journey.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<header class="app-header">
+  <div class="brand">
+    <span class="brand-icon" aria-hidden="true">🧭</span>
+    <span class="brand-name">Vippy</span>
+  </div>
+  <div class="header-actions">
+    <button id="contrastToggle" class="icon-btn" aria-pressed="false" aria-label="Toggle high contrast mode">◐</button>
+    <button id="textSizeToggle" class="icon-btn" aria-label="Increase text size">A+</button>
+  </div>
+</header>
+
+<nav class="tab-bar" role="tablist" aria-label="Main sections">
+  <button role="tab" id="tab-voice" aria-controls="panel-voice" aria-selected="true" class="tab-btn active" data-tab="voice">
+    <span aria-hidden="true">🎙️</span><span>Voice Assistant</span>
+  </button>
+  <button role="tab" id="tab-map" aria-controls="panel-map" aria-selected="false" class="tab-btn" data-tab="map">
+    <span aria-hidden="true">🗺️</span><span>Map</span>
+  </button>
+  <button role="tab" id="tab-journeys" aria-controls="panel-journeys" aria-selected="false" class="tab-btn" data-tab="journeys">
+    <span aria-hidden="true">📋</span><span>Journeys</span>
+  </button>
+  <button role="tab" id="tab-settings" aria-controls="panel-settings" aria-selected="false" class="tab-btn" data-tab="settings">
+    <span aria-hidden="true">⚙️</span><span>Settings</span>
+  </button>
+</nav>
+
+<main id="main-content">
+
+  <!-- VOICE ASSISTANT TAB (MVP) -->
+  <section id="panel-voice" class="tab-panel" role="tabpanel" aria-labelledby="tab-voice">
+    <h1 class="visually-hidden">Vippy Voice Assistant</h1>
+
+    <div class="voice-stage">
+      <button id="micButton" class="mic-button" aria-pressed="false"
+              aria-label="Talk to Vippy. Press and say Hey Vippy, then your request.">
+        <span id="micIcon" class="mic-icon" aria-hidden="true">🎙️</span>
+      </button>
+      <p id="micHint" class="mic-hint">Tap the microphone, then say <strong>"Hey Vippy"</strong> followed by your request.</p>
+
+      <div class="always-listen-row">
+        <label for="wakeWordToggle">
+          <input type="checkbox" id="wakeWordToggle">
+          Always listen for "Hey Vippy" (continuous mode — Chrome/Edge recommended)
+        </label>
+      </div>
+    </div>
+
+    <div class="assistant-status" role="status" aria-live="polite" id="assistantStatus">
+      Vippy is ready. Tap the microphone or type below to get started.
+    </div>
+
+    <section aria-label="Conversation transcript" class="transcript-wrap">
+      <h2 class="visually-hidden">Conversation</h2>
+      <ul id="transcript" class="transcript" aria-live="polite"></ul>
+    </section>
+
+    <form id="typeForm" class="type-fallback" aria-label="Type a request instead of speaking">
+      <label for="typeInput" class="visually-hidden">Type your request, e.g. "go from Big Ben to the museum"</label>
+      <input type="text" id="typeInput" placeholder='e.g. "Hey Vippy, go from Big Ben to the museum"' autocomplete="off">
+      <button type="submit">Send</button>
+    </form>
+
+    <div class="example-chips" aria-label="Example commands">
+      <button class="chip" data-example="Hey Vippy, book a journey from Big Ben to the British Museum">Big Ben → Museum</button>
+      <button class="chip" data-example="Hey Vippy, I want to go from the museum to home">Museum → Home</button>
+      <button class="chip" data-example="Hey Vippy, take me from Kings Cross Station to Trafalgar Square">Kings Cross → Trafalgar</button>
+    </div>
+  </section>
+
+  <!-- MAP TAB -->
+  <section id="panel-map" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-map">
+    <h1 class="visually-hidden">Journey Map</h1>
+    <div id="routeSummary" class="route-summary" role="status" aria-live="polite">No route yet. Book a journey from the Voice Assistant tab.</div>
+    <div id="map" class="map-canvas" role="img" aria-label="Map showing your current route"></div>
+    <ol id="stepsList" class="steps-list" aria-label="Turn by turn directions"></ol>
+  </section>
+
+  <!-- JOURNEYS TAB -->
+  <section id="panel-journeys" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-journeys">
+    <h1 class="visually-hidden">Your Journeys</h1>
+    <div class="journeys-header">
+      <h2>Saved places</h2>
+      <button id="addFavoriteBtn" class="secondary-btn">+ Add a saved place</button>
+    </div>
+    <ul id="favoritesList" class="favorites-list" aria-label="Saved places"></ul>
+
+    <h2>Journey history</h2>
+    <ul id="journeyHistory" class="journey-history" aria-label="Journey history"></ul>
+  </section>
+
+  <!-- SETTINGS TAB -->
+  <section id="panel-settings" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-settings">
+    <h1 class="visually-hidden">Settings</h1>
+    <div class="settings-group">
+      <h2>Home address</h2>
+      <label for="homeAddressInput">This is used when you say "home" (e.g. "go from the museum to home")</label>
+      <input type="text" id="homeAddressInput" placeholder="e.g. 10 Downing Street, London">
+      <button id="saveHomeBtn" class="secondary-btn">Save home address</button>
+    </div>
+    <div class="settings-group">
+      <h2>Voice</h2>
+      <label for="speechRateRange">Speech rate</label>
+      <input type="range" id="speechRateRange" min="0.5" max="1.5" step="0.1" value="1">
+      <label for="voiceSelect">Voice</label>
+      <select id="voiceSelect"></select>
+      <button id="testVoiceBtn" class="secondary-btn">Test voice</button>
+    </div>
+    <div class="settings-group">
+      <h2>About</h2>
+      <p>Vippy is a free, open-source, voice-first travel assistant proof of concept. It uses your browser's built-in
+      speech recognition and speech synthesis, OpenStreetMap for maps, Nominatim for place search, and OSRM for walking
+      directions — all free and open, no API keys or Google Maps required.</p>
+    </div>
+  </section>
+
+</main>
+
+<div id="skipToast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/storage.js?v=2"></script>
+<script src="js/tts.js?v=2"></script>
+<script src="js/geo.js?v=2"></script>
+<script src="js/nlu.js?v=2"></script>
+<script src="js/map.js?v=2"></script>
+<script src="js/voice.js?v=2"></script>
+<script src="js/app.js?v=2"></script>
+</body>
+</html>
