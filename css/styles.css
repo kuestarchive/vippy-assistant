@@ -145,6 +145,14 @@ main{ flex:1; padding:1rem; max-width:900px; margin:0 auto; width:100%; }
 .steps-list li{ background:var(--panel); border:1px solid #30363d; border-radius:10px; padding:.6rem .8rem; }
 
 /* Journeys tab */
+.active-request{
+  background:linear-gradient(135deg, rgba(79,209,197,.18), rgba(255,209,102,.12));
+  border:1px solid var(--accent-2); border-radius:var(--radius);
+  padding:1rem; margin-bottom:1.25rem; font-size:1.05rem;
+}
+.active-request.hidden{ display:none; }
+.active-request h2{ margin:0 0 .4rem; font-size:1.1rem; }
+.section-note{ color:var(--muted); font-size:.9rem; margin:.25rem 0 .75rem; }
 .journeys-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:.5rem; }
 .favorites-list, .journey-history{ list-style:none; padding:0; margin:0 0 1.5rem; display:flex; flex-direction:column; gap:.5rem; }
 .favorites-list li, .journey-history li{

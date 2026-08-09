@@ -92,6 +92,12 @@
   <!-- JOURNEYS TAB -->
   <section id="panel-journeys" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-journeys">
     <h1 class="visually-hidden">Your Journeys</h1>
+
+    <div id="activeRequestCard" class="active-request hidden" role="status" aria-live="polite">
+      <h2>Current request</h2>
+      <p id="activeRequestText"></p>
+    </div>
+
     <div class="journeys-header">
       <h2>Saved places</h2>
       <button id="addFavoriteBtn" class="secondary-btn">+ Add a saved place</button>
@@ -99,6 +105,9 @@
     <ul id="favoritesList" class="favorites-list" aria-label="Saved places"></ul>
 
     <h2>Journey history</h2>
+    <p class="section-note">Journeys here are guided by real volunteers matched from a nearby volunteer
+      network — this is a simulated volunteer pool for this proof of concept, not a connection to
+      TravelHands' real systems.</p>
     <ul id="journeyHistory" class="journey-history" aria-label="Journey history"></ul>
   </section>
 
@@ -132,12 +141,13 @@
 <div id="skipToast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="js/storage.js?v=2"></script>
-<script src="js/tts.js?v=2"></script>
-<script src="js/geo.js?v=2"></script>
-<script src="js/nlu.js?v=2"></script>
-<script src="js/map.js?v=2"></script>
-<script src="js/voice.js?v=2"></script>
-<script src="js/app.js?v=2"></script>
+<script src="js/storage.js?v=3"></script>
+<script src="js/tts.js?v=3"></script>
+<script src="js/geo.js?v=3"></script>
+<script src="js/nlu.js?v=3"></script>
+<script src="js/volunteers.js?v=3"></script>
+<script src="js/map.js?v=3"></script>
+<script src="js/voice.js?v=3"></script>
+<script src="js/app.js?v=3"></script>
 </body>
 </html>

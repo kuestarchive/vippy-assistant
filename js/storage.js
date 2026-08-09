@@ -45,7 +45,15 @@ const VippyStore = (() => {
   function addJourney(journey) {
     const d = _read();
     d.history = d.history || [];
-    d.history.unshift({ ...journey, id: `${Date.now()}` });
+    const id = `${Date.now()}`;
+    d.history.unshift({ ...journey, id });
+    _write(d);
+    return id;
+  }
+
+  function updateJourney(id, patch) {
+    const d = _read();
+    d.history = (d.history || []).map(j => (j.id === id ? { ...j, ...patch } : j));
     _write(d);
   }
 
@@ -55,5 +63,5 @@ const VippyStore = (() => {
     _write(d);
   }
 
-  return { getAll, setHomeAddress, addFavorite, removeFavorite, addJourney, saveSettings };
+  return { getAll, setHomeAddress, addFavorite, removeFavorite, addJourney, updateJourney, saveSettings };
 })();

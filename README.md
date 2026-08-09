@@ -10,9 +10,13 @@ hosted directly on GitHub Pages for free.
 
 > **Note on scope:** I could not get past the TravelHands login screen (no credentials, and creating an
 > account for you wasn't something I'd do without asking first), so this was built from the app's public
-> description plus the detailed feature spec you gave. The "booking" here plots a real walking route and
-> saves it to journey history — it does not dispatch a real human guide, since that requires TravelHands'
-> own backend/guide-matching system which isn't something this POC has access to.
+> description plus the detailed feature spec you gave. **I also have no access, credentials, or API for
+> TravelHands' real backend or admin dashboard** (`app.travelhands.co.uk/#/Admin/messages`) — this app
+> does not connect to it and never sends it anything. Instead, "journeys" here are matched against a
+> **self-contained, simulated volunteer network** (`js/volunteers.js`): a small pool of demo volunteers
+> seeded near wherever your journey starts, who "accept" requests with realistic timing and occasional
+> unavailability. It mirrors the real product's volunteer-matching concept end-to-end (request →
+> broadcast → accept → guide), entirely independent of TravelHands' actual systems.
 
 ## Why every service used here is free / open-source
 
@@ -34,9 +38,15 @@ prototyping — see "Going to production" below.
 - **Voice Assistant tab (MVP)** — tap-to-talk mic button, optional always-listening "Hey Vippy" wake-word
   mode, conversational confirmation ("So you want to go from X to Y — is that correct?"), and a live
   captioned transcript (so it's also usable by deaf-blind users or in noisy environments).
-- **Map tab** — real walking route drawn on an OpenStreetMap map, with distance/duration and full
-  turn-by-turn text directions (also screen-reader readable, not just visual).
-- **Journeys tab** — saved places (e.g. "Home", "Work") and a history of booked journeys.
+- **Volunteer matching** — confirming a journey doesn't just draw a route: it records a request and
+  broadcasts it to a simulated pool of nearby volunteers (`js/volunteers.js`), who "accept" with
+  realistic delay and occasional unavailability, same shape as the real TravelHands guide-matching flow.
+  Vippy narrates the whole thing conversationally ("I've reached out to 3 volunteers nearby… Sarah has
+  accepted and is 6 minutes away").
+- **Map tab** — once matched, the walking route is drawn on an OpenStreetMap map with distance/duration,
+  the guiding volunteer's name/rating/ETA, and full turn-by-turn text directions (screen-reader readable).
+- **Journeys tab** — an active-request card (searching/matched/no volunteers), saved places (e.g. "Home",
+  "Work"), and a history of past journeys with which volunteer guided each one.
 - **Settings tab** — home address (so "go home" works), speech rate, choice of system voice.
 - **Accessibility** — semantic landmarks & ARIA roles throughout, skip-to-content link, live regions for
   status/transcript, high-contrast mode toggle, adjustable text size, large (140px) touch targets, full

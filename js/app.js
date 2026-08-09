@@ -50,7 +50,12 @@
       micButton.setAttribute('aria-pressed', String(isListening));
     },
     onSpeaking: (isSpeaking) => micButton.classList.toggle('speaking', isSpeaking),
+    onRequestUpdate: (req) => renderActiveRequest(req),
+    onVolunteersNotified: (candidates) => {
+      toast(`Notified ${candidates.length} nearby volunteers: ${candidates.map(c => c.name).join(', ')}`);
+    },
     onJourneyConfirmed: (journey) => {
+      renderActiveRequest({ ...journey, status: 'Matched' });
       // Leaflet needs a visible, correctly-sized container before it can fit bounds —
       // switch tabs first, then invalidate size, then draw the route.
       switchTab('map');
@@ -93,9 +98,12 @@
 
   // ----- Map tab -----
   function renderRouteSummary(journey) {
-    const { origin, destination, route } = journey;
+    const { origin, destination, route, volunteer, etaMinutes } = journey;
+    const volunteerLine = volunteer
+      ? ` · guided by ${volunteer.name} ${volunteer.emoji} (${volunteer.rating}★) — arriving in about ${etaMinutes} min`
+      : '';
     $('#routeSummary').textContent =
-      `${origin.label} → ${destination.label} · ${VippyGeo.formatDistance(route.distanceMeters)} · about ${VippyGeo.formatDuration(route.durationSeconds)} walking`;
+      `${origin.label} → ${destination.label} · ${VippyGeo.formatDistance(route.distanceMeters)} · about ${VippyGeo.formatDuration(route.durationSeconds)} walking${volunteerLine}`;
     const stepsList = $('#stepsList');
     stepsList.innerHTML = '';
     route.steps.forEach(s => {
@@ -103,6 +111,20 @@
       li.textContent = s;
       stepsList.appendChild(li);
     });
+  }
+
+  // ----- Active request card (Journeys tab) -----
+  function renderActiveRequest(req) {
+    const card = $('#activeRequestCard');
+    const text = $('#activeRequestText');
+    card.classList.remove('hidden');
+    if (req.status === 'Searching') {
+      text.textContent = `Searching for a nearby volunteer for ${req.origin.label} → ${req.destination.label}…`;
+    } else if (req.status === 'Matched') {
+      text.textContent = `${req.volunteer.name} ${req.volunteer.emoji} (${req.volunteer.rating}★, ${req.volunteer.journeys} journeys) is guiding you from ${req.origin.label} to ${req.destination.label} — arriving in about ${req.etaMinutes} minutes.`;
+    } else {
+      text.textContent = `No volunteers available right now for ${req.origin.label} → ${req.destination.label}. Ask Vippy to try again shortly.`;
+    }
   }
 
   // ----- Journeys tab -----
@@ -133,8 +155,11 @@
     } else {
       data.history.forEach(h => {
         const li = document.createElement('li');
-        const pill = h.status === 'Confirmed' ? 'confirmed' : 'requested';
-        li.innerHTML = `<span>${h.originLabel} → ${h.destinationLabel} · ${h.distance} · ${h.duration}</span>
+        const pill = h.status === 'Matched' ? 'confirmed' : 'requested';
+        const volunteerLine = h.volunteer
+          ? ` · ${h.volunteer.name} ${h.volunteer.emoji} (${h.volunteer.rating}★)`
+          : '';
+        li.innerHTML = `<span>${h.originLabel} → ${h.destinationLabel} · ${h.distance} · ${h.duration}${volunteerLine}</span>
           <span class="status-pill ${pill}">${h.status}</span>`;
         histList.appendChild(li);
       });

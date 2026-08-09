@@ -19,6 +19,8 @@ const VippyVoice = (() => {
     onListening: () => {},
     onSpeaking: () => {},
     onJourneyConfirmed: () => {},
+    onRequestUpdate: () => {},
+    onVolunteersNotified: () => {},
   };
 
   function init(customHooks) {
@@ -166,22 +168,40 @@ const VippyVoice = (() => {
       ]);
 
       const route = await VippyGeo.route(origin, destination);
-      const journey = {
-        origin, destination, route,
-        status: 'Confirmed',
-        createdAt: new Date().toISOString(),
-      };
-      VippyStore.addJourney({
+
+      // A "journey" here means a volunteer guide, not just a walking route — record the request
+      // and broadcast it, same as tapping "request a guide" would in the real TravelHands app.
+      const journeyId = VippyStore.addJourney({
         originLabel: origin.label, destinationLabel: destination.label,
         distance: VippyGeo.formatDistance(route.distanceMeters),
         duration: VippyGeo.formatDuration(route.durationSeconds),
-        status: 'Confirmed',
+        status: 'Searching',
+        volunteer: null,
       });
+      hooks.onRequestUpdate({ id: journeyId, status: 'Searching', origin, destination, route });
+      say(`Got it — I'm sending your request to nearby volunteers now.`);
 
-      hooks.onJourneyConfirmed(journey);
-      state = STATE.IDLE;
-      pendingJourney = null;
-      say(`Booked! It's ${VippyGeo.formatDistance(route.distanceMeters)} and about ${VippyGeo.formatDuration(route.durationSeconds)} on foot from ${origin.label} to ${destination.label}. I've opened the map with turn-by-turn directions.`);
+      VippyVolunteers.broadcastRequest(origin, {
+        onNotified: (candidates) => {
+          hooks.onVolunteersNotified(candidates);
+          hooks.onStatus(`I've reached out to ${candidates.length} volunteers near ${origin.label}…`);
+        },
+        onMatched: (volunteer, etaMinutes) => {
+          VippyStore.updateJourney(journeyId, { status: 'Matched', volunteer, etaMinutes });
+          const journey = { id: journeyId, origin, destination, route, volunteer, etaMinutes, status: 'Matched' };
+          hooks.onJourneyConfirmed(journey);
+          state = STATE.IDLE;
+          pendingJourney = null;
+          say(`Good news — ${volunteer.name} has accepted your request! ${volunteer.name} is ${volunteer.distanceKm.toFixed(1)} kilometres away, rated ${volunteer.rating} stars from ${volunteer.journeys} journeys, and should reach you in about ${etaMinutes} minutes to guide you from ${origin.label} to ${destination.label}.`);
+        },
+        onNoVolunteers: () => {
+          VippyStore.updateJourney(journeyId, { status: 'No volunteers available' });
+          hooks.onRequestUpdate({ id: journeyId, status: 'No volunteers available', origin, destination, route });
+          state = STATE.IDLE;
+          pendingJourney = null;
+          say(`I'm sorry — no volunteers are available right now. I've saved your request and you can ask me to try again shortly.`);
+        },
+      });
     } catch (err) {
       state = STATE.IDLE;
       pendingJourney = null;
