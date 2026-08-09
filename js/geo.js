@@ -7,14 +7,19 @@ const VippyGeo = (() => {
   let lastNominatimCall = 0;
   const MIN_GAP_MS = 1100; // stay under Nominatim's 1 req/sec policy
 
-  // Default bias center: central London (TravelHands is a UK service). Used only until/unless we
-  // get the traveller's real location — without SOME bias, a query like "Big Ben" can resolve to a
-  // same-named hill on the other side of the world instead of the London landmark.
-  const DEFAULT_BIAS = { lat: 51.5074, lon: -0.1278 };
-  let userLocation = null; // {lat, lon} — used to bias search results near the traveller
+  // This app is scoped to London (that's TravelHands' market), so London is the default and
+  // dominant bias for every search — not the device's real location. A device far from the UK
+  // (a phone testing from abroad, a sandboxed dev environment, etc.) previously overrode this and
+  // sent "Big Ben" to the wrong hemisphere entirely, coming back with non-English place names too.
+  const LONDON = { lat: 51.5074, lon: -0.1278 };
+  const UK_BOUNDS = { minLat: 49.8, maxLat: 60.9, minLon: -8.6, maxLon: 1.8 };
+  const isInUK = (loc) => loc && loc.lat >= UK_BOUNDS.minLat && loc.lat <= UK_BOUNDS.maxLat &&
+    loc.lon >= UK_BOUNDS.minLon && loc.lon <= UK_BOUNDS.maxLon;
+
+  let userLocation = null; // {lat, lon} — only trusted as a search bias if it's actually in the UK
   navigator.geolocation && navigator.geolocation.getCurrentPosition(
     pos => { userLocation = { lat: pos.coords.latitude, lon: pos.coords.longitude }; },
-    () => { /* geolocation denied/unavailable — we fall back to DEFAULT_BIAS below */ },
+    () => { /* geolocation denied/unavailable — we fall back to London below */ },
     { timeout: 5000 }
   );
 
@@ -33,28 +38,33 @@ const VippyGeo = (() => {
       format: 'jsonv2',
       limit: '1',
       addressdetails: '1',
+      countrycodes: 'gb', // this app is London-scoped — never resolve to a same-named place abroad
+      'accept-language': 'en-GB',
     });
-    const bias = userLocation || DEFAULT_BIAS;
+    const bias = isInUK(userLocation) ? userLocation : LONDON;
     const d = 0.15; // ~15km box biases results near the traveller without hard-limiting them
     params.set('viewbox', `${bias.lon - d},${bias.lat + d},${bias.lon + d},${bias.lat - d}`);
     params.set('bounded', '0');
     const res = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
-      headers: { Accept: 'application/json' },
+      headers: { Accept: 'application/json', 'Accept-Language': 'en-GB,en' },
     });
     if (!res.ok) throw new Error('geocoding failed');
     const data = await res.json();
-    if (!data.length) throw new Error(`I couldn't find a place called "${query}"`);
+    if (!data.length) throw new Error(`I couldn't find a place called "${query}" in London`);
     const best = data[0];
     return { lat: parseFloat(best.lat), lon: parseFloat(best.lon), label: best.display_name.split(',').slice(0, 3).join(',') };
   }
 
   async function currentLocation() {
-    if (userLocation) return { ...userLocation, label: 'your current location' };
+    if (isInUK(userLocation)) return { ...userLocation, label: 'your current location' };
     return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) return reject(new Error('Location is not available on this device'));
+      if (!navigator.geolocation) return resolve({ ...LONDON, label: 'central London' });
       navigator.geolocation.getCurrentPosition(
-        pos => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude, label: 'your current location' }),
-        () => reject(new Error("I couldn't access your current location")),
+        pos => {
+          const loc = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+          resolve(isInUK(loc) ? { ...loc, label: 'your current location' } : { ...LONDON, label: 'central London' });
+        },
+        () => resolve({ ...LONDON, label: 'central London' }), // default to London rather than fail
         { timeout: 8000 }
       );
     });
