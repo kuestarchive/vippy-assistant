@@ -26,12 +26,18 @@ hosted directly on GitHub Pages for free.
 | Text-to-speech (conversational replies) | Browser's built-in **SpeechSynthesis** | Same — built into the browser |
 | Understanding the request ("from X to Y") | A small **rule-based parser** (`js/nlu.js`) | Runs entirely client-side, no LLM API call, works offline |
 | Map tiles | **OpenStreetMap** via Leaflet.js | Free, open-data map tiles, no API key |
-| Turning "Big Ben" into coordinates | **Nominatim** (OpenStreetMap's free geocoder) | No key; the app self-throttles to Nominatim's 1 req/sec fair-use policy |
-| Walking directions | **OSRM** public demo routing server | Free, open-source routing engine, no key |
+| Turning "Big Ben" into coordinates | **Geoapify Geocoding API** | Free tier (3,000 credits/day), signup by email only — no credit card |
+| Walking directions | **Geoapify Routing API** | Same free tier/key as geocoding |
 
 No Google Maps API, no OpenAI/Anthropic API calls for understanding speech, and no paid services anywhere
-in the stack. The trade-off: the public Nominatim/OSRM demo servers are rate-limited and meant for
-prototyping — see "Going to production" below.
+in the stack. Geoapify's free tier needs an API key (see `js/config.js`) but never a card — unlike Google
+Maps, which requires billing to be enabled before any key works at all.
+
+> **Security note:** this is a static site with no backend, so the Geoapify key in `js/config.js` ships in
+> plain text to every visitor and is visible in this public repo. That's the expected model for
+> client-side map/geocoding keys (same as how Google Maps browser keys work) — but you should restrict the
+> key in the Geoapify dashboard ("Referrer restrictions") to your GitHub Pages domain plus `localhost`, so
+> nobody else can spend your daily quota by copying it out of the page source.
 
 ## Features implemented (mapped to the VIP assistant concept)
 
@@ -100,9 +106,9 @@ Microphone permission is required and requested by the browser on first use.
 
 ## Going to production (beyond this POC)
 
-- Replace the public **Nominatim**/**OSRM** demo endpoints with self-hosted instances (both are
-  open-source and free to self-host) or a paid tier of an open provider (e.g. **OpenRouteService**,
-  **Mapbox**, **Geoapify**) once volume grows — the public demo servers are not meant for real traffic.
+- Geoapify's free tier (3,000 credits/day) already replaces the old public Nominatim/OSRM demo servers
+  with dedicated infrastructure — fine for real but modest traffic. If volume grows past that, move to a
+  paid Geoapify plan or self-host Nominatim/OSRM (both open-source and free to self-host).
 - Swap the rule-based `js/nlu.js` parser for a proper NLU/LLM if you want to understand messier phrasing —
   it currently handles the "from X to Y" / "to Y" patterns the spec asked for, but won't handle everything.
 - Real guide dispatch would need to talk to TravelHands' (or your own) backend — this POC only simulates
@@ -113,11 +119,13 @@ Microphone permission is required and requested by the browser on first use.
 ```
 index.html          Tab layout: Voice Assistant / Map / Journeys / Settings
 css/styles.css       High-contrast-first, accessible styling
+js/config.js         Geoapify API key (see security note above)
 js/storage.js        localStorage (favorites, home address, journey history, settings)
-js/tts.js            SpeechSynthesis wrapper
-js/geo.js            Nominatim geocoding + OSRM routing (throttled, free, no keys)
+js/tts.js            SpeechSynthesis wrapper, defaults to a UK English female voice
+js/geo.js            Geoapify geocoding + routing, London-scoped, mock-location testing support
 js/nlu.js            Rule-based wake-word + "from X to Y" intent parsing
+js/volunteers.js     Simulated volunteer-guide matching network
 js/map.js            Leaflet/OpenStreetMap rendering
-js/voice.js          Wake-word + conversational confirm/book state machine
+js/voice.js          Wake-word + conversational confirm/book/match state machine
 js/app.js            UI wiring: tabs, transcript, settings, accessibility toggles
 ```
